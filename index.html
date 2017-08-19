@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="datetimepicker.min.css">
+    <title>Document</title>
+</head>
+<body>
+    <main>
+        <div class="container">
+            
+            <div class="form-inline">
+                <div class="form-group">
+                    <label>Date</label>
+                    <div class='input-group date' id='datetimepicker1'>
+                        <input id='date' type='text' class="form-control" />
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Assets</label>
+                    <select name="assets" id="assets">
+                    </select>
+                </div>
+                <button class="btn btn-default">search</button>
+            </div>
+            
+            
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Expiry time</th>
+                        <th>Ask</th>
+                        <th>Bid</th>
+                        <th>Last</th>
+                        <th>Formula</th>
+                        <th>Expiry rate</th>
+                        <th>Feeds supplier</th>
+                    </tr>
+                </thead>
+                <tbody id='results'>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="moment.js"></script>
+    <script src="datetimepicker.min.js"></script>
+    <script src="assets.js"></script>
+    
+    <script>
+        $(function () {
+            $('#datetimepicker1').datetimepicker({
+                format: 'DD-MM-YYYY HH:mm'
+            });
+        });
+        for (let i=0; i<assets.length; i++){
+            $('#assets').append('<option value="'+ assets[i].id + '">' + assets[i].name + '</option>');
+        }
+        var items = []
+        function timestamp(dateString){
+            var dateParts = dateString.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/);
+            console.log(dateParts)
+            console.log(parseInt(dateParts[3]), parseInt(dateParts[2]), parseInt(dateParts[1]), parseInt(dateParts[4]), parseInt(dateParts[5]), 0)
+            return(Date.parse(new Date(parseInt(dateParts[3]), parseInt(dateParts[2])-1, parseInt(dateParts[1]), parseInt(dateParts[4]), parseInt(dateParts[5]), 0))/1000)
+        }
+        function adaptDatetime(dateString){
+            var dateParts = dateString.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/);
+            console.log(dateParts)
+        }
+        function getInfo(date, asset) {
+            var API = "http://spotplatform.ringotrade.com/PlatformAjax/expiryRates?assetId=" + $('#assets').val() + "&recordDate=" + timestamp($('#date').val());
+            console.log(API)
+            $.getJSON(API, function( data ) {
+                
+                $.each( data.data, function( key, val ) {
+                    items.push( "<li id='" + val.id + "'>" + val.feedSystem + "</li>" );
+                    if(val.lastRate == 0){
+                        val.lastRate = '...'
+                    }
+                    else{
+                        val.lastRate = parseFloat(val.lastRate);
+                    }
+                    $('#results').append(
+                        '<tr>' + 
+                            '<th>' + val.lastUpdated + '</th>' + 
+                            '<td>' + parseFloat(val.askRate) + '</td>' + 
+                            '<td>' + parseFloat(val.bidRate) + '</td>' + 
+                            '<td>' + val.lastRate + '</td>' + 
+                            '<td>' + val.rateFormula + '</td>' + 
+                            '<td>' + parseFloat(val.rate) + '</td>' + 
+                            '<td></td>' + 
+                            '</tr>'
+                    )
+                });
+            }); 
+        }
+        $('.btn').on('click', function(){
+            getInfo(date, $('#assets').val)
+        })
+    </script>
+</body>
+</html>
